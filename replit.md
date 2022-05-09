@@ -87,10 +87,17 @@ The application is configured for Replit deployment with:
 
 ### Key Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string
-- `OPENAI_API_KEY`: OpenAI API access key
+- `OPENAI_API_KEY`: OpenAI API access key (provided by user)
 - `SESSION_SECRET`: Secret for session encryption
 - `REPL_ID`: Replit environment identifier
 - `ISSUER_URL`: OIDC issuer URL for authentication
+
+### Recent Changes
+- **January 23, 2025**: Integrated real OpenAI API key for contract analysis
+- **January 23, 2025**: Added PDF parsing with pdf-parse library and DOCX support with mammoth
+- **January 23, 2025**: Removed Stripe billing integration to keep application completely free
+- **January 23, 2025**: Enhanced demo mode with comprehensive sample analysis data
+- **January 23, 2025**: Fixed TypeScript errors and improved error handling
 
 ### File Structure
 - `client/`: React frontend application
