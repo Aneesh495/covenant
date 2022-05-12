@@ -1,16 +1,19 @@
 import {
   users,
-  contracts,
-  clauses,
+  documents,
+  analysisItems,
   analysisSummaries,
+  profiles,
   type User,
   type UpsertUser,
-  type Contract,
-  type InsertContract,
-  type Clause,
-  type InsertClause,
+  type Document,
+  type InsertDocument,
+  type AnalysisItem,
+  type InsertAnalysisItem,
   type AnalysisSummary,
   type InsertAnalysisSummary,
+  type Profile,
+  type InsertProfile,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -20,19 +23,23 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
-  // Contract operations
-  createContract(contract: InsertContract): Promise<Contract>;
-  getContract(id: number): Promise<Contract | undefined>;
-  getContractsByUser(userId: string): Promise<Contract[]>;
-  updateContractStatus(id: number, status: string, riskLevel?: string): Promise<void>;
+  // Document operations (contracts and resumes)
+  createDocument(document: InsertDocument): Promise<Document>;
+  getDocument(id: number): Promise<Document | undefined>;
+  getDocumentsBySession(sessionId: string): Promise<Document[]>;
+  updateDocumentStatus(id: number, status: string, riskLevel?: string): Promise<void>;
   
-  // Clause operations
-  createClauses(clauses: InsertClause[]): Promise<Clause[]>;
-  getClausesByContract(contractId: number): Promise<Clause[]>;
+  // Analysis items operations (clauses for contracts, sections for resumes)
+  createAnalysisItems(items: InsertAnalysisItem[]): Promise<AnalysisItem[]>;
+  getAnalysisItemsByDocument(documentId: number): Promise<AnalysisItem[]>;
   
   // Analysis summary operations
   createAnalysisSummary(summary: InsertAnalysisSummary): Promise<AnalysisSummary>;
-  getAnalysisSummary(contractId: number): Promise<AnalysisSummary | undefined>;
+  getAnalysisSummary(documentId: number): Promise<AnalysisSummary | undefined>;
+  
+  // Profile operations (for anonymous users)
+  getProfile(sessionId: string): Promise<Profile | undefined>;
+  upsertProfile(profile: InsertProfile): Promise<Profile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -57,32 +64,33 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Contract operations
-  async createContract(contract: InsertContract): Promise<Contract> {
-    const [newContract] = await db
-      .insert(contracts)
-      .values(contract)
+  // Document operations (contracts and resumes)
+  async createDocument(documentData: InsertDocument): Promise<Document> {
+    const [document] = await db
+      .insert(documents)
+      .values(documentData)
       .returning();
-    return newContract;
+    return document;
   }
 
-  async getContract(id: number): Promise<Contract | undefined> {
-    const [contract] = await db
+  async getDocument(id: number): Promise<Document | undefined> {
+    const [document] = await db
       .select()
-      .from(contracts)
-      .where(eq(contracts.id, id));
-    return contract;
+      .from(documents)
+      .where(eq(documents.id, id));
+    return document;
   }
 
-  async getContractsByUser(userId: string): Promise<Contract[]> {
-    return await db
+  async getDocumentsBySession(sessionId: string): Promise<Document[]> {
+    const documentsList = await db
       .select()
-      .from(contracts)
-      .where(eq(contracts.userId, userId))
-      .orderBy(desc(contracts.createdAt));
+      .from(documents)
+      .where(eq(documents.sessionId, sessionId))
+      .orderBy(desc(documents.createdAt));
+    return documentsList;
   }
 
-  async updateContractStatus(id: number, status: string, riskLevel?: string): Promise<void> {
+  async updateDocumentStatus(id: number, status: string, riskLevel?: string): Promise<void> {
     const updateData: any = { 
       analysisStatus: status,
       updatedAt: new Date()
@@ -92,41 +100,67 @@ export class DatabaseStorage implements IStorage {
     }
     
     await db
-      .update(contracts)
+      .update(documents)
       .set(updateData)
-      .where(eq(contracts.id, id));
+      .where(eq(documents.id, id));
   }
 
-  // Clause operations
-  async createClauses(clauseData: InsertClause[]): Promise<Clause[]> {
-    return await db
-      .insert(clauses)
-      .values(clauseData)
+  // Analysis items operations (clauses for contracts, sections for resumes)
+  async createAnalysisItems(itemsData: InsertAnalysisItem[]): Promise<AnalysisItem[]> {
+    const items = await db
+      .insert(analysisItems)
+      .values(itemsData)
       .returning();
+    return items;
   }
 
-  async getClausesByContract(contractId: number): Promise<Clause[]> {
-    return await db
+  async getAnalysisItemsByDocument(documentId: number): Promise<AnalysisItem[]> {
+    const items = await db
       .select()
-      .from(clauses)
-      .where(eq(clauses.contractId, contractId));
+      .from(analysisItems)
+      .where(eq(analysisItems.documentId, documentId));
+    return items;
   }
 
   // Analysis summary operations
-  async createAnalysisSummary(summary: InsertAnalysisSummary): Promise<AnalysisSummary> {
-    const [newSummary] = await db
+  async createAnalysisSummary(summaryData: InsertAnalysisSummary): Promise<AnalysisSummary> {
+    const [summary] = await db
       .insert(analysisSummaries)
-      .values(summary)
+      .values(summaryData)
       .returning();
-    return newSummary;
+    return summary;
   }
 
-  async getAnalysisSummary(contractId: number): Promise<AnalysisSummary | undefined> {
+  async getAnalysisSummary(documentId: number): Promise<AnalysisSummary | undefined> {
     const [summary] = await db
       .select()
       .from(analysisSummaries)
-      .where(eq(analysisSummaries.contractId, contractId));
+      .where(eq(analysisSummaries.documentId, documentId));
     return summary;
+  }
+
+  // Profile operations (for anonymous users)
+  async getProfile(sessionId: string): Promise<Profile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.sessionId, sessionId));
+    return profile;
+  }
+
+  async upsertProfile(profileData: InsertProfile): Promise<Profile> {
+    const [profile] = await db
+      .insert(profiles)
+      .values(profileData)
+      .onConflictDoUpdate({
+        target: profiles.sessionId,
+        set: {
+          ...profileData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return profile;
   }
 }
 
