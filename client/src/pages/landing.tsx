@@ -34,7 +34,7 @@ export default function Landing() {
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
             Upload your legal contracts and receive structured clause extraction, 
-            AI-generated summaries, and risk flags — all powered by advanced AI.
+            AI-generated summaries, and risk flags  -  all powered by advanced AI.
           </p>
           <Button 
             size="lg"
