@@ -1,54 +1,39 @@
-# Contract analyzer
+# Covenant
 
-Full-stack app for uploading PDF or DOCX documents, extracting text, and running
-structured analysis (contracts and resumes) through a hosted model API. Sessions
-are anonymous-friendly with server-side storage for history and profile settings.
+Document analysis web app: React client, Express API, and Postgres persistence
+through Drizzle. Upload PDF or DOCX files, extract text server-side, and run
+model-backed analysis with session-scoped history.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-  subgraph client [client/]
-    UI[React pages and components]
-    QC[TanStack Query]
-  end
-  subgraph server [server/]
-    API[Express routes]
-    Parse[fileParser]
-    LLM[openai service]
-    Store[storage layer]
-  end
-  UI --> QC --> API
-  API --> Parse
-  API --> LLM
-  API --> Store
-  Store --> DB[(Postgres / Drizzle)]
+  Browser --> Web[client/]
+  Web --> API[server/ Express]
+  API --> Parser[file extraction]
+  API --> Model[analysis service]
+  API --> DB[(Drizzle + Postgres)]
+  Web --- Shared[shared/ schema]
+  API --- Shared
 ```
 
-## Stack
-
-- **Client:** React, Vite, Tailwind, shadcn-style UI primitives
-- **Server:** Express, multer uploads, session cookies
-- **Data:** Drizzle ORM, shared Zod schemas in `shared/schema.ts`
-
-## Run locally
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Set `OPENAI_API_KEY` (and database URL if not using the default dev setup) before
-analyzing documents.
+Set model and database credentials in the environment before running analysis
+outside local dev defaults.
 
-## Project layout
+## Repository map
 
-| Path | Purpose |
+| Path | Role |
 | --- | --- |
-| `client/src/pages/` | Dashboard, analysis flow, profile |
-| `server/routes.ts` | Upload and analysis endpoints |
-| `server/services/` | OpenAI calls and document parsing |
-| `shared/` | Shared types and validation |
+| `client/` | UI, routing, auth hooks |
+| `server/` | HTTP API, Vite dev integration, persistence |
+| `shared/` | Schema shared across tiers |
 
 ## License
 
