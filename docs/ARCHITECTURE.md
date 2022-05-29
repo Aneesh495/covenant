@@ -1,13 +1,16 @@
-# Contract analyzer
+# Covenant
 
 ```mermaid
 flowchart TB
-  Upload[multipart upload PDF/DOCX] --> Parse[fileParser]
-  Parse --> LLM[OpenAI analysis]
-  LLM --> Store[storage + sessions]
-  Store --> UI[React dashboard]
+  Browser --> Web[client/]
+  Web --> API[server/ Express]
+  API --> Parser[file extraction]
+  API --> Model[analysis service]
+  API --> DB[(Drizzle + Postgres)]
+  Web --- Shared[shared/ schema]
+  API --- Shared
 ```
 
-Sessions are keyed for anonymous use. Uploaded files land in `uploads/` during
-processing and metadata lives in Postgres through Drizzle models in
-`shared/schema.ts`.
+Document uploads flow through multer, text extraction, and model analysis with
+session-scoped storage. Shared Zod/Drizzle types keep the client and server in
+sync.
