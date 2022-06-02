@@ -1,16 +1,11 @@
-# Covenant
+# Data model and request path
 
-```mermaid
-flowchart TB
-  Browser --> Web[client/]
-  Web --> API[server/ Express]
-  API --> Parser[file extraction]
-  API --> Model[analysis service]
-  API --> DB[(Drizzle + Postgres)]
-  Web --- Shared[shared/ schema]
-  API --- Shared
-```
+1. Browser POSTs multipart PDF/DOCX to `/api/documents/upload`.
+2. Multer stores the blob under `uploads/`; a document row is created with
+   `analysisStatus=processing`.
+3. Background job extracts text, calls the model, writes analysis items and a
+   summary row, then marks the document complete.
+4. Client polls `/api/documents/:id` and renders extracted text plus findings.
 
-Document uploads flow through multer, text extraction, and model analysis with
-session-scoped storage. Shared Zod/Drizzle types keep the client and server in
-sync.
+Session cookies scope all reads and writes. No Replit OIDC path remains in this
+tree.

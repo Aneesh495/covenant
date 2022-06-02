@@ -1,39 +1,41 @@
 # Covenant
 
-Document analysis web app: React client, Express API, and Postgres persistence
-through Drizzle. Upload PDF or DOCX files, extract text server-side, and run
-model-backed analysis with session-scoped history.
+Document analysis for contracts and resumes. Upload PDF or DOCX, extract text
+server-side, run model-backed review, and inspect findings in a session-scoped
+dashboard.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-  Browser --> Web[client/]
-  Web --> API[server/ Express]
-  API --> Parser[file extraction]
-  API --> Model[analysis service]
-  API --> DB[(Drizzle + Postgres)]
-  Web --- Shared[shared/ schema]
+  Browser --> Web[client React]
+  Web --> API[server Express]
+  API --> Parse[PDF / DOCX extract]
+  API --> Model[OpenAI analysis]
+  API --> DB[(Postgres via Drizzle)]
+  Web --- Shared[shared schema]
   API --- Shared
 ```
 
-## Development
+## Run
 
 ```bash
+cp .env.example .env
 npm install
+npm run db:push
 npm run dev
 ```
 
-Set model and database credentials in the environment before running analysis
-outside local dev defaults.
+`SESSION_SECRET` is required when `NODE_ENV=production`. Without `OPENAI_API_KEY`,
+analysis routes fail closed rather than inventing sample text.
 
-## Repository map
+## Layout
 
 | Path | Role |
 | --- | --- |
-| `client/` | UI, routing, auth hooks |
-| `server/` | HTTP API, Vite dev integration, persistence |
-| `shared/` | Schema shared across tiers |
+| `client/` | Dashboard, analysis view, profile |
+| `server/` | Upload, extract, analyze, sessions |
+| `shared/` | Drizzle schema and Zod types |
 
 ## License
 
