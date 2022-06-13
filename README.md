@@ -1,54 +1,41 @@
-# Contract analyzer
+# Covenant
 
-Full-stack app for uploading PDF or DOCX documents, extracting text, and running
-structured analysis (contracts and resumes) through a hosted model API. Sessions
-are anonymous-friendly with server-side storage for history and profile settings.
+Document analysis for contracts and resumes. Upload PDF or DOCX, extract text
+server-side, run model-backed review, and inspect findings in a session-scoped
+dashboard.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-  subgraph client [client/]
-    UI[React pages and components]
-    QC[TanStack Query]
-  end
-  subgraph server [server/]
-    API[Express routes]
-    Parse[fileParser]
-    LLM[openai service]
-    Store[storage layer]
-  end
-  UI --> QC --> API
-  API --> Parse
-  API --> LLM
-  API --> Store
-  Store --> DB[(Postgres / Drizzle)]
+  Browser --> Web[client React]
+  Web --> API[server Express]
+  API --> Parse[PDF / DOCX extract]
+  API --> Model[OpenAI analysis]
+  API --> DB[(Postgres via Drizzle)]
+  Web --- Shared[shared schema]
+  API --- Shared
 ```
 
-## Stack
-
-- **Client:** React, Vite, Tailwind, shadcn-style UI primitives
-- **Server:** Express, multer uploads, session cookies
-- **Data:** Drizzle ORM, shared Zod schemas in `shared/schema.ts`
-
-## Run locally
+## Run
 
 ```bash
+cp .env.example .env
 npm install
+npm run db:push
 npm run dev
 ```
 
-Set `OPENAI_API_KEY` (and database URL if not using the default dev setup) before
-analyzing documents.
+`SESSION_SECRET` is required when `NODE_ENV=production`. Without `OPENAI_API_KEY`,
+analysis routes fail closed rather than inventing sample text.
 
-## Project layout
+## Layout
 
-| Path | Purpose |
+| Path | Role |
 | --- | --- |
-| `client/src/pages/` | Dashboard, analysis flow, profile |
-| `server/routes.ts` | Upload and analysis endpoints |
-| `server/services/` | OpenAI calls and document parsing |
-| `shared/` | Shared types and validation |
+| `client/` | Dashboard, analysis view, profile |
+| `server/` | Upload, extract, analyze, sessions |
+| `shared/` | Drizzle schema and Zod types |
 
 ## License
 
