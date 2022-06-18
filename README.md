@@ -1,3 +1,9 @@
+# Contract Analyzer
+
+**Private development mirror.** Public canonical repo: **[covenant](https://github.com/Aneesh495/covenant)** (same codebase path and behavior).
+
+---
+
 # Covenant
 
 End-to-end document analysis: multipart upload (PDF/DOCX), server-side text extraction, structured LLM review, and a session-scoped React dashboard. One TypeScript monorepo with shared Drizzle/Zod types across client and server.
