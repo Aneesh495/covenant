@@ -13,3 +13,7 @@ uploads/
 *.log
 .cursor/
 coverage/
+models/
+.build_ledger.json
+.cache/
+data/blobstore/

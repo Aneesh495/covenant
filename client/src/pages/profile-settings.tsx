@@ -11,12 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ArrowLeft, User, Camera, Upload } from "lucide-react";
 import { Link } from "wouter";
+import type { Profile } from "@shared/schema";
 
 export default function ProfileSettings() {
   const { toast } = useToast();
   const [profileImage, setProfileImage] = useState<string>("");
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ["/api/profile"],
   });
 
@@ -109,7 +110,7 @@ export default function ProfileSettings() {
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src={profileImage || profile?.profileImageUrl} />
+                    <AvatarImage src={profileImage || profile?.profileImageUrl || undefined} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl">
                       <User className="h-8 w-8" />
                     </AvatarFallback>
