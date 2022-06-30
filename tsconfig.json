@@ -1,5 +1,12 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+  "include": [
+    "client/src/**/*",
+    "shared/**/*",
+    "server/**/*",
+    "packages/**/*",
+    "apps/**/*",
+    "scripts/**/*"
+  ],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "incremental": true,
@@ -11,13 +18,32 @@
     "jsx": "preserve",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "@covenant/shared": ["./packages/shared/src/index.ts"],
+      "@covenant/shared/*": ["./packages/shared/src/*"],
+      "@covenant/document-ir": ["./packages/document-ir/src/index.ts"],
+      "@covenant/document-ir/*": ["./packages/document-ir/src/*"],
+      "@covenant/ingestion": ["./packages/ingestion/src/index.ts"],
+      "@covenant/ingestion/*": ["./packages/ingestion/src/*"],
+      "@covenant/persistence": ["./packages/persistence/src/index.ts"],
+      "@covenant/persistence/*": ["./packages/persistence/src/*"],
+      "@covenant/retrieval": ["./packages/retrieval/src/index.ts"],
+      "@covenant/retrieval/*": ["./packages/retrieval/src/*"],
+      "@covenant/policies": ["./packages/policies/src/index.ts"],
+      "@covenant/policies/*": ["./packages/policies/src/*"],
+      "@covenant/contract-pipeline": ["./packages/contract-pipeline/src/index.ts"],
+      "@covenant/contract-pipeline/*": ["./packages/contract-pipeline/src/*"],
+      "@covenant/resume-pipeline": ["./packages/resume-pipeline/src/index.ts"],
+      "@covenant/resume-pipeline/*": ["./packages/resume-pipeline/src/*"],
+      "@covenant/providers": ["./packages/providers/src/index.ts"],
+      "@covenant/providers/*": ["./packages/providers/src/*"],
+      "@covenant/evaluation": ["./packages/evaluation/src/index.ts"],
+      "@covenant/evaluation/*": ["./packages/evaluation/src/*"]
     }
   }
 }

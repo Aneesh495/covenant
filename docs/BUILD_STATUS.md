@@ -1,35 +1,45 @@
 # Build Status and Implementation Ledger
 
 ## Current Status Overview
-- Timestamp: 2026-09-30 18:21 EDT
-- Phase: 1. Baseline Audit, Defect Documentation, and Environment Preparation
-- Verification Status: Clean baseline tests passing, TypeScript check TS2339 fixed with exact types, build passing.
+- Timestamp: 2026-09-30 18:26 EDT
+- Phase: 2. Document Representation, Ingestion, Canonical Offsets, and Blob Storage
+- Verification Status: 23 tests passing across 4 test suites; strict TypeScript check passing with zero errors; build passing.
 
-## Baseline Audit and Recorded Pre-Existing Defects
-1. **Model Service Hallucination / Mock Drift**: `server/services/openai.ts` returned hardcoded contract and resume findings when `OPENAI_API_KEY` was missing or upon provider errors. The mock findings contained text completely absent from analyzed inputs. Captured in `tests/baseline/preexisting_defects.test.ts`.
-2. **Missing Text Persistence**: `server/routes.ts` extracted text via `extractTextFromFile` but invoked `storage.updateDocumentStatus` without writing `extractedText` into the database record. The document viewer consequently lacked text evidence.
-3. **Property Mismatch in Contract Viewer**: `client/src/components/contract-viewer.tsx` expected `clause.text`, `clause.content`, or `clause.clauseText`, but database schema persisted `itemText`.
-4. **Strict TypeScript Errors**: Five TS2339 property access errors in `client/src/pages/profile-settings.tsx` due to untyped `useQuery` resolution. Resolved by binding `useQuery<Profile>` to the typed schema.
-5. **Lack of Durable Task Queue**: Document processing was launched asynchronously inside the HTTP handler process with no leasing, retry control, or fencing tokens. Session management utilized in-memory state.
-
-## Local Environment Verification
-- Node.js runtime: v24.21.0
-- Package manager: npm 11.19.0
-- Database: PostgreSQL 17.11 with pgvector 0.8.6 extension active on databases `covenant` and `covenant_test`
-- OCR runtime: Tesseract OCR (`/opt/homebrew/bin/tesseract`) and `pdftoppm` verified
-- Local LLM engine: llama.cpp 0.5.0 (`llama-server`, `llama-cli`) installed and operational
-- Test runner: Vitest 2.1.9 with root configuration in `vitest.config.ts`
+## Implemented Modules and Capabilities
+1. **DocumentIR Architecture (`packages/document-ir`)**:
+   - Versioned DocumentIR schema adhering to half-open UTF-16 code unit offset slicing (`[canonicalStart, canonicalEnd)`).
+   - Reversible SourceMap structure linking canonical text back to page numbers, source blocks, bounding boxes, and OCR metadata.
+   - Server-side quote resolution (`resolveProposedEvidence`) and citation verification (`verifyCitationAgainstDocument`) preventing unverified client/model position tampering.
+   - Binary-search source map range lookup and span extraction.
+   - Typed schema serialization and deserialization via Zod.
+2. **Document Ingestion & Extraction (`packages/ingestion`)**:
+   - Magic byte file signature detection (`%PDF-`, `PK\x03\x04`, UTF-8 text).
+   - Input file bounds enforcement: size limits, empty file rejection, and encrypted PDF detection.
+   - DOCX package parser with JSZip and XML DOM: heading style detection (`Heading 1-6`), list item nesting levels (`w:numPr`), and table grid extraction (`w:tbl`, `w:tr`, `w:tc`).
+   - Zip bomb defense: uncompressed size ratio and entry count bounds.
+   - Multi-column layout detection and column-first reading order reconstruction for PDF pages.
+   - Repeated header and footer cross-page heuristic filtering.
+   - Local OCR profile for scanned PDFs using `pdftoppm` and `tesseract` with TSV bounding boxes and confidence scores.
+   - Unified `extractDocument` orchestrator.
+3. **Content-Addressed Blob Storage (`packages/persistence`)**:
+   - `IBlobStore` contract with content-addressed SHA-256 keys.
+   - `LocalFsBlobStore` with 2-character prefix subdirectories, atomic write semantics, metadata persistence, and deduplication.
+   - `S3BlobStoreAdapter` for S3-compatible remote storage.
+4. **Reproducible Measurement**:
+   - `scripts/loc_census.ts` tracking substantive non-blank, non-comment lines by module, excluding copied UI primitives and tests.
 
 ## Actual Commands and Results
 - `npm run check`: Exited with code 0 (all TypeScript checks pass).
-- `npm run build`: Exited with code 0 (Vite client bundle and server bundle built).
-- `npx vitest run tests/baseline/preexisting_defects.test.ts`: 5 passing tests capturing pre-existing defects.
+- `npm test`: Exited with code 0 (23 passing tests across 4 test suites).
+- `npx tsx scripts/loc_census.ts`: Exited with code 0 (4,470 substantive production lines, 376 test lines).
 
 ## Evidence Paths
 - Baseline tests: `tests/baseline/preexisting_defects.test.ts`
-- Vitest config: `vitest.config.ts`
-- Status ledger: `docs/BUILD_STATUS.md`
+- DocumentIR tests: `tests/unit/document_ir.test.ts`
+- Ingestion tests: `tests/unit/ingestion.test.ts`
+- Blob store tests: `tests/unit/blob_store.test.ts`
+- Source ledger: `docs/BUILD_STATUS.md`
 
 ## Next Actions
-1. Commit the baseline defect suite, environment fixes, and status documentation.
-2. Implement Phase 2: Document IR, canonical text offsets, source mapping, and content-addressed blob storage (`packages/document-ir`, `packages/persistence`, `packages/ingestion`).
+1. Commit DocumentIR, ingestion pipeline, blob storage, and tests.
+2. Implement Phase 3: PostgreSQL Schema with tenant/workspace isolation, Drizzle migrations, and Durable Leased Task Queue (`FOR UPDATE SKIP LOCKED`, heartbeats, retry backoff, fencing tokens).
