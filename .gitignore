@@ -17,3 +17,4 @@ models/
 .build_ledger.json
 .cache/
 data/blobstore/
+tmp/

@@ -20,6 +20,7 @@ export type CovenantErrorCode =
   | "DOCUMENT_NOT_FOUND"
   | "VERSION_NOT_FOUND"
   | "BLOB_NOT_FOUND"
+  | "NOT_FOUND"
   | "MODEL_PROVIDER_ERROR"
   | "MODEL_TIMEOUT"
   | "RATE_LIMITED"
