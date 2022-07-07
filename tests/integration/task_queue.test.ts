@@ -29,6 +29,8 @@ describe("PostgreSQL Durable Task Queue and Tenant Isolation", () => {
     await runMigrations();
 
     const pool = getPgPool();
+    await pool.query("TRUNCATE analysis_tasks, analysis_runs, findings, citations, documents, document_versions, workspaces, workspace_members CASCADE;");
+
     queue = new PostgresTaskQueue(pool);
     wsRepo = new WorkspaceRepository(pool);
     docRepo = new DocumentRepository(pool);
