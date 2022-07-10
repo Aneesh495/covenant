@@ -1,0 +1,81 @@
+import { PolicyPlaybook } from "../ast";
+
+export const NdaPlaybook: PolicyPlaybook = {
+  id: "playbook-nda-standard",
+  name: "Standard Non-Disclosure Agreement Review",
+  version: "1.0.0",
+  documentType: "nda",
+  description: "Standard institutional review policy for mutual and unilateral non-disclosure agreements.",
+  rules: [
+    {
+      id: "RULE_NDA_RECIPROCAL",
+      version: "1.0.0",
+      name: "Bilateral Confidentiality Symmetry",
+      category: "confidentiality",
+      severity: "high",
+      description: "Confidentiality obligations must be mutual and protect both disclosing and receiving parties.",
+      condition: {
+        type: "party_asymmetry",
+        obligationCategory: "confidentiality",
+        requiredSymmetry: "bilateral",
+      },
+      explanationTemplate: "The agreement establishes unilateral confidentiality obligations protecting only one party.",
+      suggestedAction: "Modify confidentiality clause to be mutual, binding both parties equally.",
+      patchTemplate: {
+        replacementText: "Each party ('Receiving Party') agrees to protect the Confidential Information of the other party ('Disclosing Party') with the same degree of care...",
+        explanation: "Redline to make confidentiality obligations mutual.",
+      },
+    },
+    {
+      id: "RULE_NDA_DURATION_LIMIT",
+      version: "1.0.0",
+      name: "Confidentiality Term Limit",
+      category: "term",
+      severity: "medium",
+      description: "Confidentiality duration should not exceed 3 years from the date of disclosure, except for trade secrets.",
+      condition: {
+        type: "numeric_threshold",
+        field: "confidentiality_duration_years",
+        operator: ">",
+        threshold: 3,
+        unit: "years",
+      },
+      explanationTemplate: "Confidentiality duration of {{extractedValue}} years exceeds the policy limit of 3 years.",
+      suggestedAction: "Negotiate confidentiality duration down to 3 years from disclosure.",
+    },
+    {
+      id: "RULE_NDA_REQUIRED_EXCEPTIONS",
+      version: "1.0.0",
+      name: "Standard Carve-Out Exceptions Required",
+      category: "confidentiality",
+      severity: "critical",
+      description: "Confidentiality must exclude public information, prior knowledge, independent development, and legally compelled disclosure.",
+      condition: {
+        type: "required_exception",
+        scopeCategory: "confidentiality",
+        requiredExceptions: [
+          "public knowledge",
+          "independent development",
+          "compelled by law",
+        ],
+      },
+      explanationTemplate: "Confidentiality definition lacks standard carve-out exceptions: {{missingExceptions}}.",
+      suggestedAction: "Insert standard exclusions: public domain, prior possession, independent development, and required legal disclosures.",
+    },
+    {
+      id: "RULE_NDA_PROHIBITED_INDEMNITY",
+      version: "1.0.0",
+      name: "No Indemnification in Standalone NDA",
+      category: "indemnification",
+      severity: "high",
+      description: "Stand-alone NDAs should not contain broad indemnification commitments.",
+      condition: {
+        type: "clause_presence",
+        category: "indemnification",
+        expected: "absent",
+      },
+      explanationTemplate: "Indemnification clause detected in stand-alone NDA, introducing disproportionate contractual liability.",
+      suggestedAction: "Strike the indemnification clause in its entirety from the NDA.",
+    },
+  ],
+};

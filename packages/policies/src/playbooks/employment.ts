@@ -1,0 +1,77 @@
+import { PolicyPlaybook } from "../ast";
+
+export const EmploymentPlaybook: PolicyPlaybook = {
+  id: "playbook-employment-standard",
+  name: "Standard Employment Agreement Review",
+  version: "1.0.0",
+  documentType: "employment",
+  description: "Review policy for executive and standard employment contracts.",
+  rules: [
+    {
+      id: "RULE_EMP_AT_WILL",
+      version: "1.0.0",
+      name: "At-Will Employment Statement",
+      category: "employment_status",
+      severity: "medium",
+      description: "Employment relationship should clearly specify at-will employment status.",
+      condition: {
+        type: "clause_presence",
+        category: "at_will",
+        expected: "present",
+      },
+      explanationTemplate: "Agreement does not explicitly state at-will employment terms.",
+      suggestedAction: "Confirm at-will employment clause is included unless fixed-term employment is intended.",
+    },
+    {
+      id: "RULE_EMP_SEVERANCE_NOTICE",
+      version: "1.0.0",
+      name: "Minimum Termination Notice",
+      category: "termination",
+      severity: "high",
+      description: "Termination without cause must require at least 14 days advance written notice.",
+      condition: {
+        type: "numeric_threshold",
+        field: "termination_notice_days",
+        operator: "<",
+        threshold: 14,
+        unit: "days",
+      },
+      explanationTemplate: "Termination notice period of {{extractedValue}} days is below the required minimum of 14 days.",
+      suggestedAction: "Increase advance notice period to at least 14 days or provide pay in lieu of notice.",
+    },
+    {
+      id: "RULE_EMP_NON_COMPETE_DURATION",
+      version: "1.0.0",
+      name: "Reasonable Non-Compete Duration",
+      category: "restrictive_covenants",
+      severity: "critical",
+      description: "Post-employment non-compete duration must not exceed 12 months.",
+      condition: {
+        type: "numeric_threshold",
+        field: "non_compete_duration_months",
+        operator: ">",
+        threshold: 12,
+        unit: "months",
+      },
+      explanationTemplate: "Non-compete covenant duration of {{extractedValue}} months exceeds enforceable statutory guidelines (max 12 months).",
+      suggestedAction: "Limit restrictive covenant duration to 12 months maximum.",
+    },
+    {
+      id: "RULE_EMP_PRIOR_INVENTIONS",
+      version: "1.0.0",
+      name: "Prior Inventions Carveout in IP Assignment",
+      category: "intellectual_property",
+      severity: "high",
+      description: "IP assignment clauses must allow the employee to carve out prior unassigned inventions.",
+      condition: {
+        type: "required_exception",
+        scopeCategory: "intellectual_property",
+        requiredExceptions: [
+          "prior inventions",
+        ],
+      },
+      explanationTemplate: "Proprietary information and inventions assignment lacks prior inventions disclosure carveout.",
+      suggestedAction: "Attach Exhibit A allowing employee to list pre-existing inventions excluded from assignment.",
+    },
+  ],
+};
