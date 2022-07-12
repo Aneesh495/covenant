@@ -1,34 +1,38 @@
 # Build Status and Implementation Ledger
 
 ## Current Status Overview
-- Timestamp: 2026-09-30 18:35 EDT
-- Phase: 5. Review Policy DSL and Playbooks (AST, Parser, Type Checker, Evaluator, Builtin Playbooks)
-- Verification Status: 40 tests passing across 7 test suites; strict TypeScript check passing with zero errors; build passing.
+- Timestamp: 2026-09-30 18:37 EDT
+- Phase: 6. Contract Intelligence Pipeline (Clause Segmentation, Entity/Obligation Extraction, Version Comparison, Review Pipeline)
+- Verification Status: 45 tests passing across 8 test suites; strict TypeScript check passing with zero errors; build passing.
 
 ## Implemented Modules and Capabilities
-1. **Policy AST (`packages/policies/src/ast.ts`)**:
-   - Typed condition nodes: `clause_presence`, `numeric_threshold`, `prohibited_formulation`, `required_exception`, `party_asymmetry`, `broken_cross_reference`, `logical_and`, `logical_or`, `logical_not`.
-   - Typed patch templates for suggested redlines.
-   - Comprehensive rule execution traces recording rule identity, pass/fail state, severity, details, and exact citations.
-2. **Policy Parser and Validator (`packages/policies/src/parser.ts`)**:
-   - `PolicyParser` with static JSON deserialization and structural validation.
-   - Strict validation of condition trees, operators (`>`, `<`, `>=`, `<=`, `==`, `!=`), units (`days`, `months`, `years`, `usd`, `percent`, `count`), and severity levels.
-3. **Policy Evaluator (`packages/policies/src/evaluator.ts`)**:
-   - Safe missing-clause abstention: when document extraction confidence is below 0.7, abstains from reporting missing clauses to prevent false positives on degraded scans.
-   - Exact citation grounding: maps clause matches to canonical offsets, block IDs, page numbers, and bounding boxes.
-   - Numeric threshold evaluations: flags deviations on notice windows, non-compete periods, and liability caps.
-   - Prohibited formulation detection with suggested replacement patches.
-   - Party asymmetry detection for unilateral indemnity, confidentiality, or termination provisions.
-   - Cross-reference integrity checking against document defined sections.
-4. **Builtin Playbooks (`packages/policies/src/playbooks/`)**:
-   - `NdaPlaybook`: Standard mutual NDA policy enforcing term limits, bilateral confidentiality, return of materials, notice periods, and cross-reference validity.
-   - `EmploymentPlaybook`: Employment agreement policy enforcing at-will protections, reasonable non-compete durations (under 12 months), invention assignment carve-outs, and severance terms.
-   - `ServicesAgreementPlaybook`: Master services agreement policy enforcing mutual indemnification, liability caps, net-30 payment terms, and confidentiality carve-outs for gross negligence.
+1. **Clause Segmenter (`packages/contract-pipeline/src/clause_segmenter.ts`)**:
+   - Reconstructs hierarchical contract clause tree from DocumentIR blocks.
+   - Detects numbered sections (articles, sections, subsections like 1.1, schedules, exhibits) and preamble blocks.
+   - Computes parent-child relations, heading text, depth levels, and exact canonical offsets.
+   - Categorizes clauses into standard contract archetypes (confidentiality, IP assignment, indemnification, liability limitation, termination, governing law, non-compete, etc.).
+2. **Entity Extractor (`packages/contract-pipeline/src/entity_extractor.ts`)**:
+   - Extracts contracting parties with alias resolution and role inference (primary entity vs counterparty, disclosing vs receiving).
+   - Extracts defined terms and definitions from definition clauses.
+   - Extracts numeric quantities with normalized units: notice periods (calendar/business days), non-compete durations (months), liability caps (USD), and payment net days.
+   - Extracts governing law and jurisdiction clauses.
+3. **Obligation Extractor (`packages/contract-pipeline/src/obligation_extractor.ts`)**:
+   - Identifies contractual modal verbs (`shall`, `must`, `will`, `may`, `shall not`, `must not`).
+   - Extracts obligation actors, actions, conditions, and exceptions (e.g. carve-outs for gross negligence or willful misconduct).
+   - Evaluates bilateral vs unilateral symmetry.
+   - Maps extracted obligations to `ExtractedClauseEntity` records for policy evaluation.
+4. **Version Comparator (`packages/contract-pipeline/src/version_comparator.ts`)**:
+   - Performs multi-pass alignment between contract revisions: exact section number matches, content similarity via Dice coefficient, and moved/renumbered clauses.
+   - Computes token-level Myers/LCS diffs identifying exact insertions, deletions, and unchanged spans.
+   - Analyzes high-risk shifts: numeric threshold modifications (e.g. 30 days reduced to 14 days), modality shifts (e.g. mandatory to discretionary), added negative covenants, and added/deleted clauses.
+5. **Contract Review Pipeline Orchestrator (`packages/contract-pipeline/src/pipeline.ts`)**:
+   - Orchestrates segmentation, entity extraction, obligation extraction, policy evaluation, and summary generation.
+   - Enforces strict verification of all finding citations against canonical document text slices.
 
 ## Actual Commands and Results
 - `npm run check`: Exited with code 0 (all TypeScript checks pass).
-- `DATABASE_URL="postgres://localhost:5432/covenant_test" npm test`: Exited with code 0 (40 passing tests across 7 test suites).
-- `npx tsx scripts/loc_census.ts`: Exited with code 0 (7,342 substantive production lines, 1,013 test lines).
+- `DATABASE_URL="postgres://localhost:5432/covenant_test" npm test`: Exited with code 0 (45 passing tests across 8 test suites).
+- `npx tsx scripts/loc_census.ts`: Exited with code 0 (8,444 substantive production lines, 1,254 test lines).
 
 ## Evidence Paths
 - Baseline tests: `tests/baseline/preexisting_defects.test.ts`
@@ -38,8 +42,9 @@
 - Task queue integration tests: `tests/integration/task_queue.test.ts`
 - Retrieval unit tests: `tests/unit/retrieval.test.ts`
 - Policy unit tests: `tests/unit/policies.test.ts`
+- Contract pipeline tests: `tests/unit/contract_pipeline.test.ts`
 - Source ledger: `docs/BUILD_STATUS.md`
 
 ## Next Actions
-1. Commit Phase 5: Review Policy DSL and Playbooks.
-2. Implement Phase 6: Contract Intelligence Pipeline (`packages/contract-pipeline`) with clause segmentation, entity and obligation extraction graph, and semantic version comparison (structural alignment, token-level diff, altered obligations).
+1. Commit Phase 6: Contract Intelligence Pipeline.
+2. Implement Phase 7: Resume Intelligence Pipeline (`packages/resume-pipeline`) with candidate profile extraction, role requirement parsing, hybrid requirement coverage matrix, ATS heuristic checks, and strict factual preservation rewrite validator.
