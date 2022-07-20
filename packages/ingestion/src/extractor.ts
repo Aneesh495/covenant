@@ -51,7 +51,9 @@ export async function extractDocument(
   if (mediaType === "application/pdf") {
     if (options.forceOcr) {
       // Force OCR for every page
-      const pdfParse = (await import("pdf-parse")).default;
+      // @ts-ignore
+      const pdfParseModule = await import("pdf-parse/lib/pdf-parse.js");
+      const pdfParse = pdfParseModule.default || pdfParseModule;
       const meta = await pdfParse(buffer, { max: 1 });
       const numPages = meta.numpages || 1;
       for (let p = 1; p <= numPages; p++) {

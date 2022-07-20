@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -17,11 +19,18 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const PgSession = connectPgSimple(session);
+
 app.use(
   session({
+    store: new PgSession({
+      pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
     secret: sessionSecret || "dev-only-session-secret",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
       secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000,

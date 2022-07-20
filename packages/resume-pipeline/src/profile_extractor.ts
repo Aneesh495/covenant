@@ -76,8 +76,9 @@ export class CandidateProfileExtractor {
     let currentSection: SectionRange = { name: "contact", startBlockIdx: 0, endBlockIdx: 0 };
 
     for (let i = 0; i < blocks.length; i++) {
-      const text = blocks[i].text.trim().toLowerCase();
-      const isHeader = blocks[i].type === "heading" || (text.length < 40 && text === text.toUpperCase() && text.length > 3);
+      const rawText = blocks[i].text.trim();
+      const text = rawText.toLowerCase();
+      const isHeader = blocks[i].type === "heading" || (rawText.length < 40 && rawText === rawText.toUpperCase() && rawText.length > 3);
 
       if (isHeader) {
         let detectedName: SectionRange["name"] | null = null;

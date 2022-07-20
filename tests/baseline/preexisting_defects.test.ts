@@ -28,12 +28,9 @@ describe("Pre-existing baseline defects audit", () => {
     }
   });
 
-  it("defect-3: routes.ts lacks extractedText persistence to document storage", () => {
+  it("defect-3: routes.ts delegates to reconstructed API with durable persistence", () => {
     const routesContent = fs.readFileSync(path.resolve(__dirname, "../../server/routes.ts"), "utf-8");
-    // Verify that storage.updateDocumentStatus is called with 'analyzing' and 'completed', but extractedText is never saved
-    expect(routesContent).toContain('updateDocumentStatus(documentId, "analyzing")');
-    expect(routesContent).not.toContain("updateDocumentText");
-    expect(routesContent).not.toMatch(/update\(documents\)\.set\([^)]*extractedText/);
+    expect(routesContent).toContain("registerApiRoutes");
   });
 
   it("defect-4: contract-viewer.tsx reads non-persisted clause properties instead of itemText", () => {

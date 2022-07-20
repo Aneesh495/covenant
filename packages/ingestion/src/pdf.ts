@@ -210,7 +210,9 @@ export function groupItemsIntoBlocks(
  * Extracts structured pages from a PDF buffer using pdf-parse and pdf.js page rendering.
  */
 export async function extractPdf(pdfBuffer: Buffer): Promise<PdfExtractionResult> {
-  const pdfParse = (await import("pdf-parse")).default;
+  // @ts-ignore
+  const pdfParseModule = await import("pdf-parse/lib/pdf-parse.js");
+  const pdfParse = pdfParseModule.default || pdfParseModule;
 
   const rawPagesData: Array<{
     pageNumber: number;
