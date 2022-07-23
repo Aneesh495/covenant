@@ -36,7 +36,7 @@ export const NdaPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "confidentiality_duration_years",
-        operator: ">",
+        operator: "<=",
         threshold: 3,
         unit: "years",
       },

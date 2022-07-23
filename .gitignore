@@ -16,5 +16,7 @@ coverage/
 models/
 .build_ledger.json
 .cache/
-data/blobstore/
+data/
+artifacts/
+ACCEPTANCE.json
 tmp/

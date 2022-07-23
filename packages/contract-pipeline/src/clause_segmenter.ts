@@ -147,40 +147,56 @@ export class ClauseSegmenter {
   }
 
   private finalizeClause(clause: ContractClauseNode, doc: DocumentIR): void {
-    if (!clause.category || clause.category === "unknown") {
-      clause.category = this.categorizeHeading(clause.heading) || this.categorizeBody(clause.bodyText);
+    if (clause.category === "preamble") return;
+    let cat = this.categorizeHeading(clause.heading);
+    if (!cat || cat === "unknown") {
+      cat = this.categorizeBody(clause.bodyText || clause.fullText);
     }
+    clause.category = cat || "unknown";
   }
 
   categorizeHeading(heading: string): string {
     const lower = heading.toLowerCase();
 
-    if (lower.includes("confidential") || lower.includes("non-disclosure") || lower.includes("proprietary information")) {
+    if (
+      lower.includes("confidential") ||
+      lower.includes("non-disclosure") ||
+      lower.includes("proprietary information") ||
+      lower.includes("obligations of recipient") ||
+      lower.includes("recipient obligations") ||
+      lower.includes("secrecy")
+    ) {
       return "confidentiality";
     }
+    if (lower.includes("at-will") || lower.includes("at will")) {
+      return "at_will";
+    }
     if (lower.includes("intellectual property") || lower.includes("inventions") || lower.includes("work for hire") || lower.includes("ip ownership")) {
-      return "ip_assignment";
+      return "intellectual_property";
     }
     if (lower.includes("indemnif") || lower.includes("hold harmless")) {
       return "indemnification";
     }
-    if (lower.includes("limitation of liability") || lower.includes("liability limitation") || lower.includes("consequential damages")) {
+    if (lower.includes("limitation of liability") || lower.includes("liability limitation") || lower.includes("consequential damages") || lower.includes("liability")) {
       return "liability_limitation";
     }
     if (lower.includes("termination") || lower.includes("term and termination")) {
       return "termination";
     }
+    if (lower.includes("term of confidentiality") || lower.startsWith("term")) {
+      return "term";
+    }
     if (lower.includes("governing law") || lower.includes("jurisdiction") || lower.includes("choice of law") || lower.includes("dispute")) {
       return "governing_law";
     }
     if (lower.includes("non-compete") || lower.includes("non-competition") || lower.includes("competitive activities")) {
-      return "non_compete";
+      return "restrictive_covenants";
     }
     if (lower.includes("non-solicit") || lower.includes("non-solicitation")) {
       return "non_solicitation";
     }
     if (lower.includes("payment") || lower.includes("fees") || lower.includes("compensation") || lower.includes("invoicing")) {
-      return "payment_terms";
+      return "payment";
     }
     if (lower.includes("warrant") || lower.includes("representation")) {
       return "warranties";
@@ -209,16 +225,34 @@ export class ClauseSegmenter {
 
   private categorizeBody(bodyText: string): string {
     const lower = bodyText.toLowerCase();
-    if (lower.includes("shall keep confidential") || lower.includes("confidential information")) {
+    if (lower.includes("at-will") || lower.includes("at will") || lower.includes("with or without cause")) {
+      return "at_will";
+    }
+    if (
+      lower.includes("shall keep confidential") ||
+      lower.includes("confidential information") ||
+      lower.includes("strict confidence") ||
+      lower.includes("shall not disclose") ||
+      lower.includes("proprietary information")
+    ) {
       return "confidentiality";
     }
-    if (lower.includes("indemnify, defend and hold harmless")) {
+    if (lower.includes("indemnify, defend and hold harmless") || lower.includes("indemnif")) {
       return "indemnification";
     }
-    if (lower.includes("in no event shall either party be liable")) {
+    if (lower.includes("in no event shall either party be liable") || lower.includes("aggregate liability") || lower.includes("limitation of liability")) {
       return "liability_limitation";
     }
-    if (lower.includes("either party may terminate")) {
+    if (lower.includes("non-compete") || lower.includes("competing financial enterprise") || lower.includes("engage in any competing")) {
+      return "restrictive_covenants";
+    }
+    if (lower.includes("assigns all inventions") || lower.includes("prior inventions") || lower.includes("proprietary information and inventions")) {
+      return "intellectual_property";
+    }
+    if (lower.includes("invoice") || lower.includes("net 30") || lower.includes("payment")) {
+      return "payment";
+    }
+    if (lower.includes("either party may terminate") || lower.includes("termination")) {
       return "termination";
     }
     if (lower.includes("governed by the laws of")) {

@@ -32,7 +32,7 @@ export const EmploymentPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "termination_notice_days",
-        operator: "<",
+        operator: ">=",
         threshold: 14,
         unit: "days",
       },
@@ -49,7 +49,7 @@ export const EmploymentPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "non_compete_duration_months",
-        operator: ">",
+        operator: "<=",
         threshold: 12,
         unit: "months",
       },

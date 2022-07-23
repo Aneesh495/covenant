@@ -131,7 +131,14 @@ export class PolicyEvaluator {
   ): boolean {
     switch (cond.type) {
       case "clause_presence": {
-        const matchingClauses = context.clauses.filter((c) => c.category === cond.category);
+        const matchingClauses = context.clauses.filter((c) => {
+          if (c.category === cond.category) return true;
+          if (cond.category === "at_will") {
+            const lower = (c.text + " " + (c.actor || "")).toLowerCase();
+            return lower.includes("at-will") || lower.includes("at will") || lower.includes("with or without cause");
+          }
+          return false;
+        });
         const exists = matchingClauses.length > 0;
         details.clauseCount = matchingClauses.length;
         details.category = cond.category;
@@ -195,35 +202,58 @@ export class PolicyEvaluator {
       }
 
       case "required_exception": {
-        const matchingClauses = context.clauses.filter((c) => c.category === cond.scopeCategory);
+        const matchingClauses = context.clauses.filter(
+          (c) =>
+            c.category === cond.scopeCategory ||
+            (cond.scopeCategory === "liability" && c.category === "liability_limitation") ||
+            (cond.scopeCategory === "liability_limitation" && c.category === "liability")
+        );
         if (matchingClauses.length === 0) return true; // Handled by clause_presence
 
-        for (const cl of matchingClauses) {
-          const textLower = cl.text.toLowerCase();
-          const missingExceptions: string[] = [];
+        const aggregateText = matchingClauses.map((c) => c.text.toLowerCase()).join(" ");
+        const missingExceptions: string[] = [];
 
-          for (const req of cond.requiredExceptions) {
-            if (!textLower.includes(req.toLowerCase())) {
-              missingExceptions.push(req);
-            }
-          }
+        const checkExceptionPresent = (text: string, req: string): boolean => {
+          const lower = text.toLowerCase();
+          const reqLower = req.toLowerCase();
+          if (lower.includes(reqLower)) return true;
+          if (reqLower === "independent development" && lower.includes("independently developed")) return true;
+          if (reqLower === "public knowledge" && (lower.includes("public domain") || lower.includes("publicly known") || lower.includes("publicly available"))) return true;
+          if (reqLower === "compelled by law" && (lower.includes("required by law") || lower.includes("court order") || lower.includes("legal process"))) return true;
+          if (reqLower === "prior inventions" && (lower.includes("personal inventions") || lower.includes("pre-existing inventions") || lower.includes("excluded inventions"))) return true;
+          return false;
+        };
 
-          if (missingExceptions.length > 0) {
-            details.missingExceptions = missingExceptions;
-            citations.push({
-              blockId: cl.blockId,
-              exactQuote: cl.text.slice(0, 120),
-            });
-            return false;
+        for (const req of cond.requiredExceptions) {
+          if (!checkExceptionPresent(aggregateText, req)) {
+            missingExceptions.push(req);
           }
+        }
+
+        if (missingExceptions.length > 0) {
+          details.missingExceptions = missingExceptions;
+          const primaryClause = matchingClauses[0];
+          citations.push({
+            blockId: primaryClause.blockId,
+            exactQuote: primaryClause.text.slice(0, 120),
+          });
+          return false;
         }
         return true;
       }
 
       case "party_asymmetry": {
         const matchingClauses = context.clauses.filter((c) => c.category === cond.obligationCategory);
+        if (matchingClauses.length === 0) return true;
+
+        const allText = matchingClauses.map((c) => c.text.toLowerCase()).join(" ");
+        const hasMutual = allText.includes("each party") || allText.includes("either party") || allText.includes("both parties") || allText.includes("mutual") || allText.includes("mutually");
+        if (hasMutual) {
+          return true;
+        }
+
         for (const cl of matchingClauses) {
-          if (cond.requiredSymmetry === "bilateral" && cl.isBilateral === false) {
+          if (cl.isBilateral === false) {
             details.asymmetricParty = cl.actor || "unilateral";
             citations.push({
               blockId: cl.blockId,

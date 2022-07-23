@@ -112,8 +112,8 @@ export class EntityExtractor {
   extractNumericQuantities(text: string, baseOffset: number): Record<string, ExtractedNumericQuantity> {
     const quantities: Record<string, ExtractedNumericQuantity> = {};
 
-    // 1. Durations and notice periods (e.g. "30 days", "thirty (30) days", "60 calendar days", "12 months")
-    const durationRegex = /(?:[a-zA-Z]+\s+)?\(?(\d+)\)?\s*(calendar\s+|business\s+)?(days?|months?|years?|weeks?)/gi;
+    // 1. Durations and notice periods (e.g. "30 days", "thirty (30) days", "60 calendar days", "twenty-four (24) months")
+    const durationRegex = /(?:[a-zA-Z-]+(?:\s+[a-zA-Z-]+)*\s+)?\(?(\d+)\)?\s*(calendar\s+|business\s+)?(days?|months?|years?|weeks?)/gi;
     let match: RegExpExecArray | null;
 
     while ((match = durationRegex.exec(text)) !== null) {
@@ -130,29 +130,76 @@ export class EntityExtractor {
         daysValue = num * 365;
       }
 
-      const lowerWindow = text.slice(Math.max(0, match.index - 40), match.index + match[0].length + 40).toLowerCase();
+      const lowerWindow = text.slice(Math.max(0, match.index - 50), match.index + match[0].length + 50).toLowerCase();
 
-      if (lowerWindow.includes("notice") || lowerWindow.includes("terminate") || lowerWindow.includes("cure")) {
-        quantities.notice_period_days = {
+      if (
+        lowerWindow.includes("compete") ||
+        lowerWindow.includes("competition") ||
+        lowerWindow.includes("non-compete") ||
+        lowerWindow.includes("restrictive") ||
+        lowerWindow.includes("solicit")
+      ) {
+        const monthsVal = normalizedUnit === "months" ? num : (normalizedUnit === "years" ? num * 12 : Math.round(num / 30));
+        const item = {
+          value: monthsVal,
+          unit: "months",
+          rawText: match[0].trim(),
+          startOffset: baseOffset + match.index,
+          endOffset: baseOffset + match.index + match[0].length,
+        };
+        quantities.non_compete_months = item;
+        quantities.non_compete_duration_months = item;
+      } else if (
+        lowerWindow.includes("renew") ||
+        lowerWindow.includes("automatic renewal") ||
+        lowerWindow.includes("auto-renewal")
+      ) {
+        const item = {
           value: daysValue,
           unit: "days",
-          rawText: match[0],
+          rawText: match[0].trim(),
           startOffset: baseOffset + match.index,
           endOffset: baseOffset + match.index + match[0].length,
         };
-      } else if (lowerWindow.includes("non-compete") || lowerWindow.includes("restrictive")) {
-        quantities.non_compete_months = {
-          value: normalizedUnit === "months" ? num : Math.round(num / 30),
-          unit: "months",
-          rawText: match[0],
+        quantities.renewal_notice_window_days = item;
+      } else if (
+        lowerWindow.includes("notice") ||
+        lowerWindow.includes("advance written notice") ||
+        lowerWindow.includes("prior written notice") ||
+        lowerWindow.includes("cure period") ||
+        (lowerWindow.includes("terminate") && !lowerWindow.includes("following termination"))
+      ) {
+        const item = {
+          value: daysValue,
+          unit: "days",
+          rawText: match[0].trim(),
           startOffset: baseOffset + match.index,
           endOffset: baseOffset + match.index + match[0].length,
         };
-      } else if (lowerWindow.includes("net") || lowerWindow.includes("payment") || lowerWindow.includes("invoice")) {
+        quantities.notice_period_days = item;
+        quantities.termination_notice_days = item;
+      } else if (
+        lowerWindow.includes("confidential") ||
+        lowerWindow.includes("secrecy") ||
+        lowerWindow.includes("non-disclosure") ||
+        lowerWindow.includes("term of confidentiality") ||
+        lowerWindow.includes("period of")
+      ) {
+        const yearsVal = normalizedUnit === "years" ? num : (normalizedUnit === "months" ? Math.round(num / 12) : Math.round(num / 365));
+        const item = {
+          value: yearsVal,
+          unit: "years",
+          rawText: match[0].trim(),
+          startOffset: baseOffset + match.index,
+          endOffset: baseOffset + match.index + match[0].length,
+        };
+        quantities.confidentiality_duration_years = item;
+        quantities.confidentiality_term_years = item;
+      } else if (lowerWindow.includes("net") || lowerWindow.includes("payment") || lowerWindow.includes("invoice") || lowerWindow.includes("due")) {
         quantities.payment_net_days = {
           value: daysValue,
           unit: "days",
-          rawText: match[0],
+          rawText: match[0].trim(),
           startOffset: baseOffset + match.index,
           endOffset: baseOffset + match.index + match[0].length,
         };

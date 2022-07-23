@@ -17,7 +17,7 @@ export const ServicesAgreementPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "liability_cap_usd",
-        operator: ">",
+        operator: "<=",
         threshold: 1000000,
         unit: "usd",
       },
@@ -56,7 +56,7 @@ export const ServicesAgreementPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "payment_net_days",
-        operator: "<",
+        operator: ">=",
         threshold: 30,
         unit: "days",
       },
@@ -73,7 +73,7 @@ export const ServicesAgreementPlaybook: PolicyPlaybook = {
       condition: {
         type: "numeric_threshold",
         field: "renewal_notice_window_days",
-        operator: ">",
+        operator: "<=",
         threshold: 60,
         unit: "days",
       },
