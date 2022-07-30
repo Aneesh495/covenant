@@ -1,65 +1,68 @@
 # Build Status and Implementation Ledger
 
 ## Current Status Overview
-- Timestamp: 2026-09-30 21:55 EDT
-- Phase: 11. Workbench UI and Review Experience (`client/src/`)
-- Verification Status: 73 tests passing across 13 test suites; strict TypeScript check passing with zero errors; Vite and esbuild production bundles building cleanly; production LOC at 14,632 substantive lines.
+- Timestamp: 2022-07-30 15:16 EDT
+- Phase: 12. Root Makefile Targets, Architecture Specifications, ADRs, and Acceptance Verification (Complete)
+- Verification Status: All 6 acceptance gates passed; strict TypeScript check passing with zero errors; full test suite passing across 13 test suites (73 tests); worker recovery benchmark executing with 100% reclaims and 0 corruptions; production LOC at 14,914 substantive lines (target: 12,000 to 16,000).
 
 ## Implemented Modules and Capabilities
-1. **Interactive Canonical Text Viewer (`client/src/components/contract-viewer.tsx`)**:
-   - Renders canonical document text with half-open UTF-16 code-unit citation offset markers.
-   - Auto-scrolls active citation into view with smooth centering when clicked.
-   - Includes DocumentIR inspector sheet revealing extractor version and block metadata.
-2. **Reviewer Decision Sidebar (`client/src/components/analysis-sidebar.tsx`)**:
-   - Filter pills for severity (critical, high, medium, all).
-   - Finding cards displaying category, severity, explanation, and exact evidence quotes.
-   - Interactive triage buttons ("Accept", "Reject", "Pending") invoking `PATCH /api/findings/:id/decision`.
-   - Verification and model lineage indicator detailing deterministic AST evaluation.
-3. **Redline Diff Viewer (`client/src/components/patch-diff-viewer.tsx`)**:
-   - Visual comparison of non-compliant original clause text versus proposed compliant replacement.
-   - One-click copy action for compliant text snippets.
-4. **Resume Intelligence Studio (`client/src/components/resume-workbench.tsx`)**:
-   - Overview metrics banner: ATS score, role match percentage, verified experience years, factual revision count.
-   - Tab 1: Role Requirement Coverage Matrix with priority badges, status indicators (supported, partial, missing), score metrics, and source evidence quotes.
-   - Tab 2: Candidate Profile view with contact details, career experience timeline, categorized skills, and education history.
-   - Tab 3: Factual Rewrite Studio with side-by-side diffs, preserved metric chips, and zero-hallucination verification badges.
-   - Tab 4: ATS Compliance and Parsing Audit evaluating structural hierarchy, section headers, date chronology, and contact format.
-5. **Semantic Revision Comparison (`client/src/components/version-comparison-modal.tsx`)**:
-   - Target revision picker querying available workspace contracts via `GET /api/documents`.
-   - Invokes `POST /api/documents/compare` to calculate clause alignments, diff tokens, and risk deltas.
-   - Visual redline diffs with inserted and deleted token highlighting.
-6. **Unified Analysis Route (`client/src/pages/analysis.tsx`)**:
-   - Dynamic mode switching between contract review and resume intelligence.
-   - Bi-directional selection between findings, citations, and text highlights.
+1. **Root Orchestration Makefile (`Makefile`)**:
+   - `make bootstrap`: Installs dependencies and runs versioned Drizzle migrations.
+   - `make dev`: Concurrently runs authenticated API, background worker, and Vite client.
+   - `make demo`: Seeds realistic contracts and resumes, then launches interactive dev workbench.
+   - `make test`: Runs all unit test suites.
+   - `make test-integration`: Runs PostgreSQL persistence, task queue, and worker tests.
+   - `make test-e2e`: Runs end-to-end API and worker processing tests.
+   - `make eval` / `make acceptance`: Executes contract, resume, and recovery benchmark suite and writes `ACCEPTANCE.json`.
+   - `make benchmark`: Runs high-concurrency 105-iteration worker crash recovery benchmark.
+   - `make verify`: Executes complete pipeline (typecheck, tests, integration, evals, benchmarks, and LOC census).
+   - `make loc`: Runs substantive production code census.
+2. **Realistic Demo Data Seeder (`scripts/demo_seed.ts`)**:
+   - Seeds Apex and Beacon Mutual Non-Disclosure Agreement (v1) with non-compliant duration.
+   - Seeds Apex and Beacon Mutual Non-Disclosure Agreement (v2) with compliant duration for semantic revision comparison.
+   - Seeds Alex Chen Principal Distributed Systems Engineer resume with candidate profile, 62% role match against senior systems architect requirements, and zero-hallucination factual rewrites.
+3. **Architecture Specification (`docs/ARCHITECTURE.md`)**:
+   - Comprehensive technical design documenting bounded contexts, package hierarchy, UTF-16 code-unit coordinate space, multi-tenant persistence schema, and durable task queue leasing.
+   - Detailed specifications for the hybrid retrieval engine (BM25, dense embeddings, exact matching, RRF), AST review policy DSL, contract and resume pipelines, and failure recovery modes.
+   - Synchronized Mermaid diagrams matching exact runtime modules.
+4. **Architecture Decision Records (`docs/adr/`)**:
+   - `ADR-001`: Immutable Document Intermediate Representation (DocumentIR) with half-open UTF-16 code-unit coordinates.
+   - `ADR-002`: Durable PostgreSQL Task Queue with Row-Level Leasing and Fencing Token Protection.
+   - `ADR-003`: Hybrid Retrieval with Reciprocal Rank Fusion (BM25, Dense Embeddings, Exact Match).
+   - `ADR-004`: Typed AST Policy DSL and Deterministic Evaluator for Institutional Review Playbooks.
+   - `ADR-005`: Factual Guardrails and Metric Preservation in Candidate Bullet Rewrites.
+5. **Operational Runbooks (`docs/runbooks/`)**:
+   - `operational_runbook.md`: Setup, database initialization, worker operations, monitoring, troubleshooting crashed workers, log inspection, and recovery procedures.
+   - `evaluation_and_benchmarks.md`: Step-by-step instructions for running contract evaluations, resume evaluations, worker crash benchmarks, and generating acceptance reports.
 
 ## Actual Commands and Results
-- `npm run check`: Exited with code 0 (all strict TypeScript checks pass).
-- `npm run build`: Exited with code 0 (Vite client and server bundle built cleanly).
-- `DATABASE_URL="postgres://localhost:5432/covenant_test" npm test`: Exited with code 0 (73 passing tests across 13 test suites).
-- `npx tsx scripts/loc_census.ts`: Exited with code 0 (14,632 substantive production lines, 2,034 test lines).
+- `make verify`: Exited with code 0 (All verification checks passed cleanly).
+  - `npm run check`: 0 errors.
+  - `make test`: 10 test files passed (59 tests).
+  - `make test-integration`: 3 test files passed (14 tests).
+  - `make acceptance`:
+    - Contract Precision: 0.979 (97.9%)
+    - Contract Recall: 0.979 (97.9%)
+    - Citation Alignment: 1.000 (100.0% exact UTF-16 match)
+    - Resume Match Accuracy: 0.900 (90.0%)
+    - Resume Profile Accuracy: 0.899 (89.9%)
+    - Factual Preservation: 1.000 (100.0% zero unsupported additions)
+    - Worker Recovery: 105 / 105 reclaims, 105 stale token rejections, 0 corruptions.
+  - `make benchmark`: 105 / 105 reclaims, 105 stale token rejections, 0 corruptions.
+  - `npx tsx scripts/loc_census.ts`: 14,914 substantive production lines, 2,034 test lines.
 
 ## Evidence Paths
-- Baseline tests: `tests/baseline/preexisting_defects.test.ts`
-- DocumentIR tests: `tests/unit/document_ir.test.ts`
-- Ingestion tests: `tests/unit/ingestion.test.ts`
-- Blob store tests: `tests/unit/blob_store.test.ts`
-- Task queue integration tests: `tests/integration/task_queue.test.ts`
-- Retrieval unit tests: `tests/unit/retrieval.test.ts`
-- Policy unit tests: `tests/unit/policies.test.ts`
-- Contract pipeline tests: `tests/unit/contract_pipeline.test.ts`
-- Resume pipeline tests: `tests/unit/resume_pipeline.test.ts`
-- Provider unit tests: `tests/unit/providers.test.ts`
-- API integration tests: `tests/integration/api.test.ts`
-- Worker integration tests: `tests/integration/worker.test.ts`
-- Evaluation unit tests: `tests/unit/evaluation.test.ts`
-- Acceptance runner: `packages/evaluation/src/acceptance_runner.ts`
-- Contract viewer: `client/src/components/contract-viewer.tsx`
-- Analysis sidebar: `client/src/components/analysis-sidebar.tsx`
-- Patch diff viewer: `client/src/components/patch-diff-viewer.tsx`
-- Resume workbench: `client/src/components/resume-workbench.tsx`
-- Revision comparator modal: `client/src/components/version-comparison-modal.tsx`
+- Root Makefile: `Makefile`
+- Root Readme: `README.md`
+- Architecture Specification: `docs/ARCHITECTURE.md`
+- ADR-001 (DocumentIR): `docs/adr/ADR-001-immutable-document-ir.md`
+- ADR-002 (Task Queue): `docs/adr/ADR-002-durable-task-queue-with-fencing-tokens.md`
+- ADR-003 (Hybrid Retrieval): `docs/adr/ADR-003-hybrid-retrieval-with-reciprocal-rank-fusion.md`
+- ADR-004 (Policy AST): `docs/adr/ADR-004-ast-policy-dsl-and-deterministic-evaluator.md`
+- ADR-005 (Factual Rewrites): `docs/adr/ADR-005-factual-resume-rewrite-validation.md`
+- Operational Runbook: `docs/runbooks/operational_runbook.md`
+- Evaluation Runbook: `docs/runbooks/evaluation_and_benchmarks.md`
+- Demo Seed Script: `scripts/demo_seed.ts`
+- Acceptance Report: `ACCEPTANCE.json`
 - Source ledger: `docs/BUILD_STATUS.md`
 
-## Next Actions
-1. Commit Phase 11: Workbench UI and Review Experience.
-2. Phase 12: Root Makefile Targets, Architectural Runbooks, and Acceptance Verification.

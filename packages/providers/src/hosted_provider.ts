@@ -26,7 +26,7 @@ export class HostedModelProvider implements IModelProvider {
   constructor(config?: HostedProviderConfig) {
     this.apiKey = config?.apiKey || process.env.OPENAI_API_KEY || "";
     this.baseUrl = config?.baseUrl || process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
-    this.modelName = config?.modelName || process.env.OPENAI_MODEL_NAME || "gpt-4o";
+    this.modelName = config?.modelName || process.env.OPENAI_MODEL_NAME || "gpt-3.5-turbo";
     this.maxRetries = config?.maxRetries ?? 3;
     this.timeoutMs = config?.timeoutMs ?? 30000;
   }

@@ -378,7 +378,7 @@ export default function Dashboard() {
               </div>
               <h3 className="text-lg font-semibold mb-2">AI-Powered Analysis</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Advanced OpenAI GPT-4 technology analyzes your documents with expert-level precision.
+                Advanced transformer-based language models analyze your documents with expert-level precision.
               </p>
             </CardContent>
           </Card>

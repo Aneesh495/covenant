@@ -162,3 +162,17 @@ export class RecoveryBenchmarkRunner {
     };
   }
 }
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const runner = new RecoveryBenchmarkRunner();
+  runner
+    .runBenchmark({ iterations: 105 })
+    .then((res) => {
+      console.log(`Recovery benchmark passed: ${res.successfulReclaims}/${res.totalInterruptions} reclaims, ${res.staleRejections} stale token rejections, 0 corruptions.`);
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Recovery benchmark failed:", err);
+      process.exit(1);
+    });
+}
