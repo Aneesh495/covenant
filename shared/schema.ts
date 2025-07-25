@@ -36,10 +36,11 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Contract analysis storage
-export const contracts = pgTable("contracts", {
+// Document analysis storage (contracts and resumes)
+export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  sessionId: varchar("session_id").notNull(), // Use session instead of user for anonymous access
+  documentType: varchar("document_type").notNull(), // contract, resume
   filename: varchar("filename").notNull(),
   originalName: varchar("original_name").notNull(),
   fileSize: integer("file_size").notNull(),
@@ -51,13 +52,14 @@ export const contracts = pgTable("contracts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Clause analysis results
-export const clauses = pgTable("clauses", {
+// Analysis sections (clauses for contracts, sections for resumes)
+export const analysisItems = pgTable("analysis_items", {
   id: serial("id").primaryKey(),
-  contractId: integer("contract_id").notNull().references(() => contracts.id),
-  clauseText: text("clause_text").notNull(),
-  category: varchar("category").notNull(), // liability, termination, confidentiality, etc.
-  riskLevel: varchar("risk_level").notNull(), // low, medium, high
+  documentId: integer("document_id").notNull().references(() => documents.id),
+  itemText: text("item_text").notNull(),
+  category: varchar("category").notNull(), // For contracts: liability, termination, etc. For resumes: skills, experience, etc.
+  riskLevel: varchar("risk_level"), // For contracts: low, medium, high. For resumes: could be strength level
+  score: integer("score"), // For resumes: 1-10 rating
   summary: text("summary"),
   suggestion: text("suggestion"),
   startPosition: integer("start_position"),
@@ -68,35 +70,47 @@ export const clauses = pgTable("clauses", {
 // Analysis summary
 export const analysisSummaries = pgTable("analysis_summaries", {
   id: serial("id").primaryKey(),
-  contractId: integer("contract_id").notNull().references(() => contracts.id),
+  documentId: integer("document_id").notNull().references(() => documents.id),
   criticalIssues: text("critical_issues"),
   recommendations: text("recommendations"),
-  missingClauses: text("missing_clauses"),
+  missingItems: text("missing_items"), // missing clauses for contracts, missing skills for resumes
+  overallScore: integer("overall_score"), // For resumes: overall rating 1-10
   highRiskCount: integer("high_risk_count").default(0),
   mediumRiskCount: integer("medium_risk_count").default(0),
   lowRiskCount: integer("low_risk_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Profile settings for anonymous users (stored in localStorage)
+export const profiles = pgTable("profiles", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id").notNull().unique(),
+  name: varchar("name"),
+  email: varchar("email"),
+  bio: text("bio"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
-
-export type InsertContract = typeof contracts.$inferInsert;
-export type Contract = typeof contracts.$inferSelect;
-
-export type InsertClause = typeof clauses.$inferInsert;
-export type Clause = typeof clauses.$inferSelect;
-
-export type InsertAnalysisSummary = typeof analysisSummaries.$inferInsert;
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof documents.$inferInsert;
+export type AnalysisItem = typeof analysisItems.$inferSelect;
+export type InsertAnalysisItem = typeof analysisItems.$inferInsert;
 export type AnalysisSummary = typeof analysisSummaries.$inferSelect;
+export type InsertAnalysisSummary = typeof analysisSummaries.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;
+export type InsertProfile = typeof profiles.$inferInsert;
 
-export const insertContractSchema = createInsertSchema(contracts).omit({
+export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertClauseSchema = createInsertSchema(clauses).omit({
+export const insertAnalysisItemSchema = createInsertSchema(analysisItems).omit({
   id: true,
   createdAt: true,
 });
@@ -104,4 +118,10 @@ export const insertClauseSchema = createInsertSchema(clauses).omit({
 export const insertAnalysisSummarySchema = createInsertSchema(analysisSummaries).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertProfileSchema = createInsertSchema(profiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });

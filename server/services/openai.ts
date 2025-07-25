@@ -35,6 +35,26 @@ export interface ContractAnalysis {
   lowRiskCount: number;
 }
 
+export interface ResumeSection {
+  sectionText: string;
+  category: string;
+  score: number; // 1-10 rating
+  summary: string;
+  suggestion?: string;
+  startPosition: number;
+  endPosition: number;
+}
+
+export interface ResumeAnalysis {
+  sections: ResumeSection[];
+  overallScore: number; // 1-10 overall rating
+  strengths: string;
+  weaknesses: string;
+  recommendations: string;
+  missingElements: string;
+  skillsGap: string;
+}
+
 export async function analyzeContract(contractText: string): Promise<ContractAnalysis> {
   try {
     // If no OpenAI API key, return demo analysis
@@ -169,5 +189,136 @@ function getDemoAnalysis(contractText: string): ContractAnalysis {
     highRiskCount: 1,
     mediumRiskCount: 1,
     lowRiskCount: 1
+  };
+}
+
+export async function analyzeResume(resumeText: string): Promise<ResumeAnalysis> {
+  try {
+    // If no OpenAI API key, return demo analysis
+    if (!openai) {
+      return getDemoResumeAnalysis(resumeText);
+    }
+
+    const prompt = `
+You are a professional resume analysis AI. Analyze the following resume text and provide detailed feedback.
+
+For each section found, provide:
+- The exact section text
+- Category (summary, experience, education, skills, projects, certifications, achievements, contact, or other)
+- Score from 1-10 (10 being excellent)
+- Plain English summary of what's good/bad
+- Specific improvement suggestions
+- Start and end character positions in the text
+
+Also provide:
+- Overall score (1-10)
+- Key strengths
+- Main weaknesses
+- Actionable recommendations
+- Missing elements that should be added
+- Skills gap analysis
+
+Respond with JSON in this exact format:
+{
+  "sections": [
+    {
+      "sectionText": "exact section text",
+      "category": "category_name",
+      "score": 8,
+      "summary": "analysis of this section",
+      "suggestion": "specific improvement",
+      "startPosition": 0,
+      "endPosition": 100
+    }
+  ],
+  "overallScore": 7,
+  "strengths": "key strengths",
+  "weaknesses": "main weaknesses",
+  "recommendations": "actionable recommendations",
+  "missingElements": "missing elements to add",
+  "skillsGap": "skills gap analysis"
+}
+
+Resume text:
+${resumeText}
+`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert resume reviewer and career advisor. Analyze resumes thoroughly and provide detailed, actionable feedback to help improve job prospects.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    // Validate and sanitize the response
+    if (!result.sections || !Array.isArray(result.sections)) {
+      throw new Error("Invalid analysis response: missing sections array");
+    }
+
+    return {
+      sections: result.sections,
+      overallScore: Math.max(1, Math.min(10, result.overallScore || 5)),
+      strengths: result.strengths || "No specific strengths identified.",
+      weaknesses: result.weaknesses || "No specific weaknesses identified.",
+      recommendations: result.recommendations || "No specific recommendations provided.",
+      missingElements: result.missingElements || "No missing elements identified.",
+      skillsGap: result.skillsGap || "No skills gap analysis available."
+    };
+  } catch (error) {
+    console.error("Resume analysis error:", error);
+    // Fallback to demo analysis on API error
+    return getDemoResumeAnalysis(resumeText);
+  }
+}
+
+// Demo resume analysis for when no API key is provided
+function getDemoResumeAnalysis(resumeText: string): ResumeAnalysis {
+  return {
+    sections: [
+      {
+        sectionText: "Software Engineer with 5+ years of experience in full-stack development, specializing in React, Node.js, and cloud technologies.",
+        category: "summary",
+        score: 7,
+        summary: "Good technical summary that highlights key skills and experience. However, it could be more specific about achievements and impact.",
+        suggestion: "Add quantifiable achievements and specify the types of applications or industries you've worked in.",
+        startPosition: 0,
+        endPosition: 120
+      },
+      {
+        sectionText: "Senior Developer at TechCorp (2020-2023): Built scalable web applications using React and Node.js. Managed a team of 3 developers.",
+        category: "experience",
+        score: 6,
+        summary: "Experience section shows progression and leadership but lacks specific achievements and metrics.",
+        suggestion: "Add specific metrics like 'increased performance by 40%' or 'delivered 15+ projects on time'.",
+        startPosition: 150,
+        endPosition: 280
+      },
+      {
+        sectionText: "JavaScript, React, Node.js, Python, AWS, Docker, PostgreSQL",
+        category: "skills",
+        score: 8,
+        summary: "Good mix of frontend, backend, and infrastructure skills that are in high demand.",
+        suggestion: "Group skills by category (Frontend, Backend, Cloud) and add proficiency levels.",
+        startPosition: 300,
+        endPosition: 380
+      }
+    ],
+    overallScore: 7,
+    strengths: "Strong technical skill set, shows career progression, good mix of frontend and backend experience.",
+    weaknesses: "Lacks quantifiable achievements, missing education section, no certifications mentioned.",
+    recommendations: "Add specific metrics to achievements, include education background, consider adding relevant certifications, improve formatting and visual appeal.",
+    missingElements: "Education section, certifications, projects section, contact information.",
+    skillsGap: "Consider adding modern frameworks like Next.js, cloud certifications (AWS/Azure), and DevOps skills like Kubernetes."
   };
 }
