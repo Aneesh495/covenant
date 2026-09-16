@@ -4,7 +4,6 @@ import OpenAI from "openai";
 // Load environment variables first
 dotenv.config();
 
-console.log("Checking OpenAI API Key:", process.env.OPENAI_API_KEY ? "✓ Found" : "✗ Not found");
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn("OPENAI_API_KEY not found. Using demo mode with sample analysis.");

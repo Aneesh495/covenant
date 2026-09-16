@@ -164,8 +164,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/contracts/:id", async (req: any, res) => {
-    req.url = `/api/documents/${req.params.id}`;
-    return app._router.handle(req, res);
+    try {
+      const sessionId = getSessionId(req);
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+      if (!document || document.sessionId !== sessionId) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      const items = await storage.getAnalysisItemsByDocument(documentId);
+      const summary = await storage.getAnalysisSummary(documentId);
+      res.json({
+        contract: document,
+        clauses: items,
+        summary,
+        document,
+        items,
+      });
+    } catch (error) {
+      console.error("Error fetching contract:", error);
+      res.status(500).json({ message: "Failed to fetch contract" });
+    }
   });
 
   // Background document analysis processing
