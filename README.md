@@ -1,23 +1,6 @@
-# Covenant
+# covenant
 
-Document analysis for contracts and resumes. Upload PDF or DOCX, extract text
-server-side, run model-backed review, and inspect findings in a session-scoped
-dashboard.
-
-## Architecture
-
-```mermaid
-flowchart TB
-  Browser --> Web[client React]
-  Web --> API[server Express]
-  API --> Parse[PDF / DOCX extract]
-  API --> Model[OpenAI analysis]
-  API --> DB[(Postgres via Drizzle)]
-  Web --- Shared[shared schema]
-  API --- Shared
-```
-
-## Run
+Upload PDF or DOCX. Text extraction and model-backed review on the server; dashboard on the client. Postgres through Drizzle. Anonymous sessions only.
 
 ```bash
 cp .env.example .env
@@ -26,17 +9,8 @@ npm run db:push
 npm run dev
 ```
 
-`SESSION_SECRET` is required when `NODE_ENV=production`. Without `OPENAI_API_KEY`,
-analysis routes fail closed rather than inventing sample text.
+Production needs `SESSION_SECRET` and `OPENAI_API_KEY`. Parsing errors return 422; no placeholder documents.
 
-## Layout
+`client/` · UI · `server/` · API · `shared/` · schema  
 
-| Path | Role |
-| --- | --- |
-| `client/` | Dashboard, analysis view, profile |
-| `server/` | Upload, extract, analyze, sessions |
-| `shared/` | Drizzle schema and Zod types |
-
-## License
-
-MIT
+More detail: `docs/ARCHITECTURE.md`
